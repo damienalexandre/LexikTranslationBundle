@@ -103,7 +103,15 @@ class ImportTranslationsCommand extends ContainerAwareCommand
 
             foreach ($finder as $file)  {
                 $this->output->write(sprintf('<comment>Importing "%s" ... </comment>', $file->getPathname()));
+
+                list($domain, $locale, $extention) = explode('.', $file->getFilename());
+                if ($domain === "routes") {
+                    $this->output->writeln('<comment>Bypass routes domain</comment>');
+                    continue;
+                }
+
                 $number = $importer->import($file);
+
                 $this->output->writeln(sprintf('<comment>%d translations</comment>', $number));
             }
         } else {
