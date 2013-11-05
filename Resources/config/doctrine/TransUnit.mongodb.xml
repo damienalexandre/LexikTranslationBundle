@@ -28,6 +28,10 @@
 
         <field fieldName="domain" name="domain" type="string" />
 
+        <field fieldName="hint" name="hint" type="string" />
+
+        <field fieldName="files" name="files" type="string" />
+
         <field fieldName="createdAt" name="created_at" type="timestamp" />
 
         <field fieldName="updatedAt" name="updated_at" type="timestamp" />

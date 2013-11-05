@@ -34,6 +34,16 @@ abstract class TransUnit
     protected $domain;
 
     /**
+     * @var string
+     */
+    protected $hint;
+
+    /**
+     * @var string
+     */
+    protected $files;
+
+    /**
      * @var Doctrine\Common\Collections\Collection
      */
     protected $translations;
@@ -202,5 +212,37 @@ abstract class TransUnit
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHint()
+    {
+        return $this->hint;
+    }
+
+    /**
+     * @param mixed $hint
+     */
+    public function setHint($hint)
+    {
+        $this->hint = $hint;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFiles()
+    {
+        return $this->files;
+    }
+
+    /**
+     * @param mixed $files
+     */
+    public function setFiles($files)
+    {
+        $this->files = $files;
     }
 }
