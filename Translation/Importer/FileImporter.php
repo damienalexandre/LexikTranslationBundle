@@ -4,6 +4,8 @@ namespace Lexik\Bundle\TranslationBundle\Translation\Importer;
 
 use Doctrine\Common\Persistence\ObjectManager;
 
+use JMS\TranslationBundle\Model\Message;
+use JMS\TranslationBundle\Translation\Loader\XliffLoader;
 use Lexik\Bundle\TranslationBundle\Document\TransUnit as TransUnitDocument;
 use Lexik\Bundle\TranslationBundle\Model\TransUnit;
 use Lexik\Bundle\TranslationBundle\Model\Translation;
@@ -54,7 +56,7 @@ class FileImporter
     }
 
     /**
-     * Impoort the given file and return the number of inserted translations.
+     * Import the given file and return the number of inserted translations.
      *
      * @param \Symfony\Component\Finder\SplFileInfo $file
      * @return int
@@ -65,33 +67,40 @@ class FileImporter
         list($domain, $locale, $extention) = explode('.', $file->getFilename());
         $serviceId = sprintf('translation.loader.%s', $extention);
 
-        if (isset($this->loaders[$serviceId])) {
-            $messageCatalogue = $this->loaders[$serviceId]->load($file->getPathname(), $locale, $domain);
+        $jms_loader = new XliffLoader();
 
-            $translationFile = $this->fileManager->getFor($file->getFilename(), $file->getPath());
+        $messageCatalogue = $jms_loader->load($file->getPathname(), $locale, $domain);
 
-            foreach ($messageCatalogue->all($domain) as $key => $content) {
-                $transUnit = $this->transUnitManager->findOneByKeyAndDomain($key, $domain);
+        $translationFile = $this->fileManager->getFor($file->getFilename(), $file->getPath());
 
-                if (!($transUnit instanceof TransUnit)) {
-                    $transUnit = $this->transUnitManager->create($key, $domain);
-                }
 
-                $translation = $this->transUnitManager->addTranslation($transUnit, $locale, $content, $translationFile);
-                if ($translation instanceof Translation) {
-                    $imported++;
-                }
+        foreach ($messageCatalogue->getDomain($domain)->all() as $key => $content)
+        {
+            $transUnit = $this->transUnitManager->findOneByKeyAndDomain($key, $domain);
 
-                // convert MongoTimestamp objects to time to don't get an error in:
-                // Doctrine\ODM\MongoDB\Mapping\Types\TimestampType::convertToDatabaseValue()
-                if ($transUnit instanceof TransUnitDocument) {
-                    $transUnit->convertMongoTimestamp();
-                }
+            if (!($transUnit instanceof TransUnit)) {
+                $transUnit = $this->transUnitManager->create($key, $domain);
+
+                /** @var $content Message */
+                $transUnit->setFiles(implode(', ', $content->getSources()));
+                $transUnit->setHint($content->getLocaleString());
             }
 
-            $this->om->flush();
-            $this->om->clear();
+            $translation = $this->transUnitManager->addTranslation($transUnit, $locale, $content->getLocaleString(), $translationFile);
+            if ($translation instanceof Translation) {
+                $imported++;
+            }
+
+            // convert MongoTimestamp objects to time to don't get an error in:
+            // Doctrine\ODM\MongoDB\Mapping\Types\TimestampType::convertToDatabaseValue()
+            if ($transUnit instanceof TransUnitDocument) {
+                $transUnit->convertMongoTimestamp();
+            }
         }
+
+        $this->om->flush();
+        $this->om->clear();
+
 
         return $imported;
     }
